@@ -7,6 +7,7 @@ import { buildMenu } from './menu'
 import { registerIpc } from './ipc'
 import { registerKbIpc } from './kb-ipc'
 import { findRoot } from './settings'
+import { initAutoUpdater } from './update'
 import { resolveInside } from './vault'
 
 // 必须在 app ready 之前调用：kbvault 自定义协议（笔记内图片等附件）
@@ -103,6 +104,7 @@ app.whenReady().then(() => {
   registerIpc(win)
   registerKbIpc(win)
   Menu.setApplicationMenu(buildMenu(win))
+  initAutoUpdater(win)
 })
 
 app.on('window-all-closed', () => {

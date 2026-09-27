@@ -1,4 +1,5 @@
 import { Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
+import { checkForUpdates } from './update'
 
 export function buildMenu(win: BrowserWindow): Menu {
   const send = (payload: unknown): void => win.webContents.send('menu:action', payload)
@@ -30,6 +31,7 @@ export function buildMenu(win: BrowserWindow): Menu {
         { type: 'separator' },
         { label: '重新扫描知识库', click: () => send({ type: 'kb:rescan' }) },
         { label: '添加知识库目录…', click: () => send({ type: 'kb:change-vault' }) },
+        { label: '检查更新…', click: () => void checkForUpdates(true) },
         { type: 'separator' },
         { label: '退出', role: 'quit' }
       ]

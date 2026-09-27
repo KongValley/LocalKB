@@ -7,10 +7,14 @@ files:
   - out/**
   - package.json
 asar: true
+publish:
+  provider: github
+  owner: KongValley
+  repo: LocalKB
 win:
   target: nsis
-  artifactName: 知识库-Setup-${version}.${ext}
+  artifactName: ${name}-Setup-${version}.${ext}
 nsis:
   oneClick: false
-  allowToChangeInstallationDirectory: true
+  allowToChangeInstallationDirectory: false
   shortcutName: 知识库
