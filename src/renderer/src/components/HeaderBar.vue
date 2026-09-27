@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorMode } from '../../../preload/api'
 import { activeTitle, activeVaultName, store } from '../store'
+import AppIcon from './AppIcon.vue'
 
 const emit = defineEmits<{ mode: [m: EditorMode]; 'toggle-theme': [] }>()
 </script>
@@ -19,7 +20,8 @@ const emit = defineEmits<{ mode: [m: EditorMode]; 'toggle-theme': [] }>()
       所见即所得
     </button>
     <button @click="emit('toggle-theme')">
-      {{ store.theme === 'dark' ? '☀ 浅色' : '☾ 深色' }}
+      <AppIcon :name="store.theme === 'dark' ? 'sun' : 'moon'" :size="14" />
+      {{ store.theme === 'dark' ? '浅色' : '深色' }}
     </button>
   </header>
 </template>

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { NoteMeta } from '../../../preload/api'
+import AppIcon from '../components/AppIcon.vue'
 import NoteListCard from '../components/NoteListCard.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { createNote, daily, openNote } from '../note'
@@ -63,15 +64,15 @@ async function onDaily(): Promise<void> {
     <div class="kb-page-sub">快捷操作</div>
     <div class="kb-cards">
       <div class="card kb-stat click" @click="onNewNote">
-        <div class="n">＋</div>
+        <div class="n"><AppIcon name="plus" :size="26" /></div>
         <div class="l">新建笔记</div>
       </div>
       <div class="card kb-stat click" @click="onDaily">
-        <div class="n">📅</div>
+        <div class="n"><AppIcon name="calendar" :size="26" /></div>
         <div class="l">每日笔记</div>
       </div>
       <div class="card kb-stat click" @click="router.push('/search')">
-        <div class="n">🔍</div>
+        <div class="n"><AppIcon name="search" :size="26" /></div>
         <div class="l">搜索</div>
       </div>
     </div>

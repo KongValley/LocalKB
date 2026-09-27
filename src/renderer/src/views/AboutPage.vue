@@ -133,6 +133,7 @@ function restart(): void {
     <PageHeader title="关于" />
 
     <div class="card about-card">
+      <img class="about-logo" :src="'logo.svg'" :alt="APP_NAME" />
       <div class="about-name">{{ APP_NAME }}</div>
       <div class="kb-page-sub">版本 {{ APP_VERSION }}</div>
       <p class="about-desc">基于 Electron + Vue 3 + Vditor 的本地知识库</p>
@@ -216,6 +217,12 @@ function restart(): void {
   flex-direction: column;
   gap: 4px;
   margin-bottom: 12px;
+}
+
+.about-logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
 }
 
 .about-name {

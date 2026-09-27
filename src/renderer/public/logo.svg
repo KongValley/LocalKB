@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="知识库">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4c8dfb"/>
+      <stop offset="1" stop-color="#1f47b8"/>
+    </linearGradient>
+    <linearGradient id="pageL" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e4ecff"/>
+    </linearGradient>
+    <linearGradient id="pageR" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#f4f7ff"/>
+      <stop offset="1" stop-color="#cddcff"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="28" y="28" width="456" height="456" rx="108" fill="url(#bg)"/>
+
+  <!-- 打开的书：左右页 -->
+  <path d="M256 166 C232 148 198 140 160 145 C146 147 134 150 124 154 L124 350 C146 343 176 341 204 346 C226 350 244 358 256 368 Z" fill="url(#pageL)"/>
+  <path d="M256 166 C280 148 314 140 352 145 C366 147 378 150 388 154 L388 350 C366 343 336 341 308 346 C286 350 268 358 256 368 Z" fill="url(#pageR)"/>
+
+  <!-- 书脊阴影 -->
+  <path d="M256 166 L256 368 L246 362 L246 172 Z" fill="#0f2a6b" opacity="0.18"/>
+  <path d="M256 166 L256 368 L266 362 L266 172 Z" fill="#0f2a6b" opacity="0.08"/>
+
+  <!-- 书签带（暖色点缀） -->
+  <path d="M322 152 L322 244 L344 222 L366 244 L366 154 Z" fill="#ffb347"/>
+
+  <!-- 左侧文字行（示意笔记内容） -->
+  <g fill="#5b7fd4" opacity="0.55">
+    <rect x="156" y="214" width="66" height="14" rx="7"/>
+    <rect x="156" y="246" width="52" height="14" rx="7"/>
+    <rect x="156" y="278" width="60" height="14" rx="7"/>
+  </g>
+</svg>

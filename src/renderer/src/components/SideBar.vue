@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { buildRootsTree } from '../folders'
+import AppIcon from './AppIcon.vue'
 import { createNote, rescan } from '../note'
 import { store } from '../store'
 import FolderNode from './FolderNode.vue'
@@ -10,15 +11,15 @@ const route = useRoute()
 const router = useRouter()
 
 const NAV: { path: string; icon: string; label: string }[] = [
-  { path: '/', icon: '🏠', label: '首页' },
-  { path: '/notes', icon: '📝', label: '笔记' },
-  { path: '/search', icon: '🔍', label: '搜索' },
-  { path: '/daily', icon: '📅', label: '每日笔记' },
-  { path: '/tags', icon: '🏷', label: '标签' },
-  { path: '/todos', icon: '✅', label: '待办' },
-  { path: '/graph', icon: '🕸', label: '知识图谱' },
-  { path: '/ai', icon: '🤖', label: 'AI 问答' },
-  { path: '/about', icon: 'ℹ', label: '关于' }
+  { path: '/', icon: 'home', label: '首页' },
+  { path: '/notes', icon: 'note', label: '笔记' },
+  { path: '/search', icon: 'search', label: '搜索' },
+  { path: '/daily', icon: 'calendar', label: '每日笔记' },
+  { path: '/tags', icon: 'tag', label: '标签' },
+  { path: '/todos', icon: 'todo', label: '待办' },
+  { path: '/graph', icon: 'graph', label: '知识图谱' },
+  { path: '/ai', icon: 'ai', label: 'AI 问答' },
+  { path: '/about', icon: 'info', label: '关于' }
 ]
 
 const roots = computed(() =>
@@ -121,7 +122,8 @@ onBeforeUnmount(() => {
     <div class="kb-side-head">
       <span v-if="!store.sideCollapsed" class="kb-side-title">知识库</span>
       <button class="btn btn-accent" title="新建笔记" @click="onNewNote">
-        {{ store.sideCollapsed ? '＋' : '新建笔记' }}
+        <AppIcon v-if="store.sideCollapsed" name="plus" :size="14" />
+        <template v-else>新建笔记</template>
       </button>
       <button
         class="btn"
@@ -129,7 +131,7 @@ onBeforeUnmount(() => {
         :disabled="!firstVaultId"
         @click="startNewFolder(firstVaultId)"
       >
-        📁
+        <AppIcon name="folderPlus" :size="14" />
       </button>
     </div>
 
@@ -142,7 +144,7 @@ onBeforeUnmount(() => {
         :title="item.label"
         @click="router.push(item.path)"
       >
-        <span class="ico">{{ item.icon }}</span>
+        <span class="ico"><AppIcon :name="item.icon" :size="16" /></span>
         <span v-if="!store.sideCollapsed">{{ item.label }}</span>
       </button>
 
@@ -151,30 +153,33 @@ onBeforeUnmount(() => {
       <div v-for="root in roots" :key="root.id" class="kb-tree">
         <div class="kb-tree-row root-row" :class="{ active: isRootActive(root.id) }">
           <span class="caret" @click.stop="collapsedRoots[root.id] = !collapsedRoots[root.id]">
-            {{ collapsedRoots[root.id] ? '▸' : '▾' }}
+            <AppIcon :name="collapsedRoots[root.id] ? 'chevronRight' : 'chevronDown'" :size="12" />
           </span>
-          <span class="ico">📦</span>
+          <span class="ico"><AppIcon name="book" :size="16" /></span>
           <span class="name" :title="root.id" @click="openRoot(root.id)">{{ root.name }}</span>
           <span v-if="root.isDefault && !store.sideCollapsed" class="badge">默认</span>
           <span class="acts">
             <button class="mini-btn" title="在根目录新建笔记" @click.stop="newNoteInRoot(root.id)">
-              ✚
+              <AppIcon name="plus" :size="13" />
             </button>
-            <button class="mini-btn" title="新建文件夹" @click.stop="startNewFolder(root.id)">📁</button>
+            <button class="mini-btn" title="新建文件夹" @click.stop="startNewFolder(root.id)">
+              <AppIcon name="folderPlus" :size="13" />
+            </button>
             <button
               v-if="!root.isDefault"
               class="mini-btn"
               title="设为默认库"
               @click.stop="setDefault(root.id)"
             >
-              ⭐
+              <AppIcon name="star" :size="13" />
             </button>
             <button
               class="mini-btn"
               :title="confirmingRemoval === root.id ? '再次点击确认移除' : '移除（不删除磁盘文件）'"
               @click.stop="askRemove(root.id)"
             >
-              {{ confirmingRemoval === root.id ? '确认?' : '✕' }}
+              <template v-if="confirmingRemoval === root.id">确认?</template>
+              <AppIcon v-else name="close" :size="13" />
             </button>
           </span>
         </div>
@@ -214,7 +219,7 @@ onBeforeUnmount(() => {
         title="回收站"
         @click="router.push('/trash')"
       >
-        <span class="ico">🗑</span>
+        <span class="ico"><AppIcon name="trash" :size="16" /></span>
         <span v-if="!store.sideCollapsed">回收站</span>
       </button>
     </div>

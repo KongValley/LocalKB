@@ -13,8 +13,11 @@ publish:
   repo: LocalKB
 win:
   target: nsis
+  icon: build/icon.ico
   artifactName: ${name}-Setup-${version}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: false
   shortcutName: 知识库
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico

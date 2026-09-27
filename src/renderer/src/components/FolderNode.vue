@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { DirNode } from '../folders'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{ node: DirNode; depth: number; vaultId: string }>()
 
@@ -93,19 +94,24 @@ onBeforeUnmount(() => {
   <div class="kb-tree">
     <div class="kb-tree-row" :class="{ active }" :style="{ paddingLeft: `${8 + depth * 12}px` }">
       <span v-if="hasChildren" class="caret" @click.stop="expanded = !expanded">
-        {{ expanded ? '▾' : '▸' }}
+        <AppIcon :name="expanded ? 'chevronDown' : 'chevronRight'" :size="12" />
       </span>
       <span v-else class="caret-space"></span>
       <span class="name" :title="node.rel" @click="open">{{ node.name }}</span>
       <span class="acts">
-        <button class="mini-btn" title="新建子文件夹" @click.stop="startCreate">✚</button>
-        <button class="mini-btn" title="重命名" @click.stop="startRename">✎</button>
+        <button class="mini-btn" title="新建子文件夹" @click.stop="startCreate">
+          <AppIcon name="plus" :size="13" />
+        </button>
+        <button class="mini-btn" title="重命名" @click.stop="startRename">
+          <AppIcon name="pencil" :size="13" />
+        </button>
         <button
           class="mini-btn"
           :title="confirming ? '再次点击确认删除' : '删除到回收站'"
           @click.stop="askDelete"
         >
-          {{ confirming ? '确认?' : '✕' }}
+          <template v-if="confirming">确认?</template>
+          <AppIcon v-else name="close" :size="13" />
         </button>
       </span>
     </div>

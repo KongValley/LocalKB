@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { TrashItem } from '../../../preload/api'
+import AppIcon from '../components/AppIcon.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { store, vaultNameById } from '../store'
 
@@ -102,7 +103,10 @@ function fmtTime(ms: number): string {
 
     <div class="trash-list">
       <div v-for="it in items" :key="it.id" class="trash-row">
-        <span class="name">{{ it.isDir ? '📁 ' : '' }}{{ baseName(it.trashedRel) }}</span>
+        <span class="name">
+          <AppIcon :name="it.isDir ? 'folder' : 'note'" :size="13" />
+          {{ baseName(it.trashedRel) }}
+        </span>
         <span class="meta">
           {{ vaultNameById(it.vaultId) }} · 原路径：{{ it.originalRel }} ·
           {{ fmtSize(it.size) }} · {{ fmtTime(it.mtimeMs) }}

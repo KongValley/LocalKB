@@ -16,6 +16,9 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'kbvault', privileges: { stream:
 // 同样必须在 app ready 之前：自定义数据目录（pointer 位于 OS 默认 userData 下）
 applyCustomDataDir()
 
+// Windows 任务栏归组与图标标识（与 electron-builder appId 一致）
+app.setAppUserModelId('com.knowledge.app')
+
 let win: BrowserWindow
 let forceClose = false
 
@@ -30,6 +33,10 @@ function createWindow(): void {
     show: false,
     title: '知识库',
     backgroundColor: '#ffffff',
+    // 开发模式下窗口图标（打包后由 exe 内嵌图标提供）
+    icon: !app.isPackaged && existsSync(join(app.getAppPath(), 'build', 'icon.png'))
+      ? join(app.getAppPath(), 'build', 'icon.png')
+      : undefined,
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
