@@ -3,3 +3,4 @@ out
 dist
 src/renderer/public/vditor-assets
 *.tsbuildinfo
+.omp/
