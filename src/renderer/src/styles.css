@@ -16,6 +16,16 @@
   --accent: #5b93f0;
 }
 
+/* 护眼：暖绿纸感，降低蓝光与对比（文字非纯黑） */
+:root[data-theme='eye'] {
+  --bg: #e9f1e3;
+  --bg-soft: #dfe9d6;
+  --border: #c6d5ba;
+  --fg: #2f3a2c;
+  --fg-dim: #67785f;
+  --accent: #2f72e0;
+}
+
 html,
 body,
 #app {
@@ -781,4 +791,54 @@ body {
   font-size: 12.5px;
   line-height: 1.7;
   margin: 0 0 18px;
+}
+
+/* ── 护眼主题：编辑器/预览同步染色（沿用 Vditor 的 CSS 变量钩子，覆盖其白底） ── */
+
+:root[data-theme='eye'] .md-editor-host.vditor,
+:root[data-theme='eye'] .md-editor-host .vditor {
+  --border-color: var(--border);
+  --second-color: rgba(47, 58, 44, 0.36);
+  --panel-background-color: var(--bg);
+  --panel-shadow: 0 1px 2px rgba(47, 58, 44, 0.16);
+  --toolbar-background-color: var(--bg-soft);
+  --toolbar-icon-color: var(--fg-dim);
+  --toolbar-icon-hover-color: var(--accent);
+  --textarea-background-color: var(--bg);
+  --textarea-text-color: var(--fg);
+  --count-background-color: rgba(47, 58, 44, 0.06);
+  --heading-border-color: var(--border);
+  --blockquote-color: var(--fg-dim);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-preview,
+:root[data-theme='eye'] .md-editor-host .vditor-reset {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-reset pre,
+:root[data-theme='eye'] .md-editor-host .vditor-reset pre code,
+:root[data-theme='eye'] .md-editor-host .vditor-reset code {
+  background-color: var(--bg-soft);
+  color: var(--fg);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-reset blockquote {
+  border-left-color: var(--border);
+  color: var(--fg-dim);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-reset h1,
+:root[data-theme='eye'] .md-editor-host .vditor-reset h2 {
+  border-bottom-color: var(--border);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-reset table th,
+:root[data-theme='eye'] .md-editor-host .vditor-reset table td {
+  border-color: var(--border);
+}
+
+:root[data-theme='eye'] .md-editor-host .vditor-reset a {
+  color: var(--accent);
 }

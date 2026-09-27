@@ -212,8 +212,9 @@ export function setMode(mode: EditorMode): void {
   store.mode = mode
 }
 
+/** 浅色 → 深色 → 护眼 → 浅色 */
 export function toggleTheme(): void {
-  store.theme = store.theme === 'dark' ? 'light' : 'dark'
+  store.theme = store.theme === 'light' ? 'dark' : store.theme === 'dark' ? 'eye' : 'light'
 }
 
 function currentMarkdown(): string {

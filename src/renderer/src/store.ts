@@ -25,10 +25,15 @@ export const store = reactive({
   graph: null as GraphData | null,
   sideCollapsed: false,
   mode: (localStorage.getItem('md:mode') as EditorMode | null) ?? 'sv',
-  theme: (localStorage.getItem('md:theme') as AppTheme | null) ?? 'light',
+  theme: readStoredTheme(),
   charCount: 0,
   lineCount: 1
 })
+
+function readStoredTheme(): AppTheme {
+  const raw = localStorage.getItem('md:theme')
+  return raw === 'dark' || raw === 'eye' || raw === 'light' ? raw : 'light'
+}
 
 /** note.ts 注入的自动保存调度（避免 store ↔ note 循环依赖） */
 let autosaveHook: (() => void) | null = null

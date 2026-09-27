@@ -1,5 +1,5 @@
 export type EditorMode = 'sv' | 'wysiwyg'
-export type AppTheme = 'light' | 'dark'
+export type AppTheme = 'light' | 'dark' | 'eye'
 
 export type MenuAction =
   | { type: 'kb:new-note' }
