@@ -54,11 +54,11 @@
 {
   "defaultVaultId": "default",
   "vaults": [{ "id": "default", "path": "C:/Users/you/Documents/知识库", "name": "知识库" }],
-  "ai": { "baseURL": "https://api.openai.com", "apiKey": "", "model": "" }
+  "ai": { "baseURL": "https://api.openai.com", "apiKeyEnc": "<系统凭据加密后的 base64>", "model": "" }
 }
 ```
 
-旧版单根配置（`vaultPath`）在首次加载时自动迁移为 `vaults` 并落盘。API Key 以明文保存在本地配置中，页面输入框为密码框。
+旧版单根配置（`vaultPath`）在首次加载时自动迁移为 `vaults` 并落盘；旧版明文 `apiKey` 也会在首次加载时改写成密文 `apiKeyEnc`（详见「隐私与本地存储」）。页面输入框为密码框。
 
 ## 快捷键
 
@@ -118,6 +118,18 @@ src/
 - 笔记身份是**全局 id**`"<vaultId>/<库内相对路径>"`（如 `default/子目录/笔记.md`），`relPath` 仅用于展示；渲染进程一切身份判断都用 id。
 - 图片协议：`kbvault://vault/<vaultId>/<encodeURIComponent(库内相对路径)>`（无 `vaultId` 的老式 URL 视为 `default` 根）。
 - 主进程写操作成功后广播 `kb:event {type:'index', source:'op'|'watch'}`，渲染进程据此重扫；文件监听为每根一套 `fs.watch(recursive)`，不可用时降级为根 + 一级子目录。
+
+## 隐私与本地存储
+
+| 面 | 说明 |
+| --- | --- |
+| AI API Key | 以**系统凭据加密**落盘（Windows DPAPI / macOS Keychain / Linux SecretService），`kb-settings.json` 中只有密文字段 `ai.apiKeyEnc`，不再保存明文；设置页输入框为密码框。换系统账户/换机器后旧密文不可解密，会提示重新输入（不影响启动）。系统不支持加密、或系统密钥载体尚未就绪（Windows 首次运行的 `Local State`）时会回退明文保存并在控制台告警，**下次启动会自动迁移为密文**。 |
+| 笔记与附件 | 就是你自己选的库目录里的明文 `.md` 与 `assets/` 文件——**不做加密**（免迁移、外部可编辑器编辑是核心特性）。隐私由操作系统文件权限与磁盘加密（BitLocker / FileVault）承担。 |
+| 网络行为 | 应用无遥测、无统计上报。唯一出网行为是「AI 问答」：把问题与至多 8 篇命中笔记的片段（标题 + 命中行，≤4000 字）发往**你在设置里填写的 baseURL**。未配置 API Key 时不会发生任何请求。 |
+| 导出 PDF | 打印用临时 HTML 写在系统临时目录，打印完成后立即删除。 |
+| 数据目录指针 | `kb-data-dir.json` 只保存你选择的数据目录路径，不含任何内容。 |
+| 缓存 | Electron/Chromium 标准缓存位于应用数据目录（含渲染过程中的页面缓存），与常见桌面应用一致；介意时可手动清空该目录下的 `Cache`/`GPUCache`。 |
+| 导出文件 | 导出 HTML 保持相对图片路径（便携）；导出 PDF 会把图片改为 `kbvault://` 绝对地址以便打印窗口加载。 |
 
 ## 已知边界
 
