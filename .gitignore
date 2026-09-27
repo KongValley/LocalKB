@@ -1,6 +1,8 @@
 node_modules
 out
 dist
+dist-v112
 src/renderer/public/vditor-assets
 *.tsbuildinfo
 .omp/
+scripts/tmp/

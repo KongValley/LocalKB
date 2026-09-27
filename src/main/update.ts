@@ -56,6 +56,7 @@ export function initAutoUpdater(win: BrowserWindow): void {
   })
 
   autoUpdater.on('update-downloaded', (info) => {
+    console.info('updater: 更新已下载，等待用户确认重启安装', info.version)
     void dialog
       .showMessageBox(win, {
         type: 'question',
