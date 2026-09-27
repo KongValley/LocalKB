@@ -1,0 +1,31 @@
+{
+  "name": "knowledge-base",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "基于 Electron 的中文知识库软件",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "npm run typecheck && electron-vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.node.json --composite false && vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "postinstall": "node scripts/sync-vditor-assets.mjs",
+    "build:win": "npm run build && electron-builder --win --x64"
+  },
+  "dependencies": {
+    "vditor": "^4.0.0",
+    "vue": "^3.5.43",
+    "vue-router": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.10",
+    "vue-tsc": "^3.3.11"
+  }
+}
