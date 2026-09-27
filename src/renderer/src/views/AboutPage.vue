@@ -6,7 +6,7 @@ import { rescan } from '../note'
 import { store } from '../store'
 
 const APP_NAME = '知识库'
-const APP_VERSION = '1.1.2'
+const APP_VERSION = '1.1.3'
 
 const dataDir = ref<string | null>(null)
 const effectiveDir = ref('')
