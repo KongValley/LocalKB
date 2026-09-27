@@ -2,10 +2,12 @@ import type Vditor from 'vditor'
 import type { EditorMode, GraphData } from '../../preload/api'
 import { buildExportHtml, renderStaticHtml } from './export'
 import {
+  activeNote,
   defaultVault,
   dirOfRel,
   fileNameOf,
   markSaved,
+  refreshPrivacy,
   setAutosaveHook,
   splitNodeId,
   store,
@@ -142,7 +144,9 @@ export async function renameActive(newTitle: string): Promise<boolean> {
   if (!id) return false
   const title = newTitle.trim().replace(/[\\/:*?"<>|]/g, ' ')
   if (!title) return false
-  const { rel } = splitNodeId(id)
+  const note = activeNote()
+  // 隐私笔记：改的是密码负载里的原始路径（密文文件名保持不透明）
+  const { rel } = note?.private && note.originalRel ? { rel: note.originalRel } : splitNodeId(id)
   const dir = dirOfRel(rel)
   const target = dir ? `${dir}/${title}.md` : `${title}.md`
   if (target === rel) return true
@@ -193,6 +197,7 @@ export async function rescan(): Promise<void> {
   store.defaultVaultId = r.defaultVaultId
   store.graph = null
   store.vaultReady = r.vaults.length > 0
+  await refreshPrivacy()
   if (store.activeId && !store.dirty && !store.notes.some((n) => n.id === store.activeId)) {
     closeActive()
   }

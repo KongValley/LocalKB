@@ -218,9 +218,28 @@ export function walkDirs(vault: string): string[] {
   return out
 }
 
-export function buildIndex(vault: string, vaultId: string): VaultIndex {
+/** 解锁后从内存注入的隐私笔记（relPath 为密文文件路径，originalRel 为原始路径） */
+export interface PrivateExtra {
+  relPath: string
+  originalRel: string
+  content: string
+  mtimeMs: number
+  size: number
+}
+
+export function buildIndex(
+  vault: string,
+  vaultId: string,
+  extras: PrivateExtra[] = []
+): VaultIndex {
   const notes: NoteMeta[] = []
   const linksByRel = new Map<string, string[]>()
+  for (const ex of extras) {
+    const name = baseName(ex.originalRel)
+    const base = parseNote(ex.relPath, ex.content, { mtimeMs: ex.mtimeMs, size: ex.size }, vaultId)
+    notes.push({ ...base, name, title: extractTitle(ex.content, name), dir: '', private: true, originalRel: ex.originalRel })
+    linksByRel.set(ex.relPath, extractLinks(ex.content))
+  }
   for (const rel of walkNotes(vault)) {
     try {
       const abs = resolveInside(vault, rel)
@@ -332,32 +351,41 @@ interface ScoredHit {
   mtimeMs: number
 }
 
-function searchOne(vault: string, vaultId: string, q: string): ScoredHit[] {
+function scoreContent(
+  vaultId: string,
+  rel: string,
+  name: string,
+  content: string,
+  mtimeMs: number,
+  q: string
+): ScoredHit | null {
+  let score = 0
+  if (name.toLowerCase().includes(q)) score += 10
+  if (extractTitle(content, name).toLowerCase().includes(q)) score += 10
+  const lines: SearchHitLine[] = []
+  let count = 0
+  content.split('\n').forEach((line, idx) => {
+    if (!line.toLowerCase().includes(q)) return
+    score += /^#\s+/.test(line) ? 5 : 1
+    count++
+    if (lines.length < 5) lines.push({ line: idx + 1, text: line.trim().slice(0, 200) })
+  })
+  if (score <= 0) return null
+  return { hit: { id: joinNodeId(vaultId, rel), vaultId, relPath: rel, count, lines }, score, mtimeMs }
+}
+
+function searchOne(vault: string, vaultId: string, q: string, extras: PrivateExtra[] = []): ScoredHit[] {
   const scored: ScoredHit[] = []
+  for (const ex of extras) {
+    const hit = scoreContent(vaultId, ex.relPath, baseName(ex.originalRel), ex.content, ex.mtimeMs, q)
+    if (hit) scored.push(hit)
+  }
   for (const rel of walkNotes(vault)) {
     try {
       const abs = resolveInside(vault, rel)
       const content = readFileSync(abs, 'utf-8')
-      const mtimeMs = statSync(abs).mtimeMs
-      const name = baseName(rel)
-      let score = 0
-      if (name.toLowerCase().includes(q)) score += 10
-      if (extractTitle(content, name).toLowerCase().includes(q)) score += 10
-      const lines: SearchHitLine[] = []
-      let count = 0
-      content.split('\n').forEach((line, idx) => {
-        if (!line.toLowerCase().includes(q)) return
-        score += /^#\s+/.test(line) ? 5 : 1
-        count++
-        if (lines.length < 5) lines.push({ line: idx + 1, text: line.trim().slice(0, 200) })
-      })
-      if (score > 0) {
-        scored.push({
-          hit: { id: joinNodeId(vaultId, rel), vaultId, relPath: rel, count, lines },
-          score,
-          mtimeMs
-        })
-      }
+      const hit = scoreContent(vaultId, rel, baseName(rel), content, statSync(abs).mtimeMs, q)
+      if (hit) scored.push(hit)
     } catch {
       /* 跳过不可读文件 */
     }
@@ -378,14 +406,18 @@ export function searchVault(vault: string, vaultId: string, query: string): Sear
   return rank(searchOne(vault, vaultId, q))
 }
 
-/** 跨根合并检索：全局按分数排序取前 50 */
-export function searchRoots(roots: { id: string; path: string }[], query: string): SearchHit[] {
+/** 跨根合并检索：全局按分数排序取前 50（extras 为解锁后的隐私笔记） */
+export function searchRoots(
+  roots: { id: string; path: string }[],
+  query: string,
+  extrasByVault: Record<string, PrivateExtra[]> = {}
+): SearchHit[] {
   const q = query.trim().toLowerCase()
   if (!q) return []
   const all: ScoredHit[] = []
   for (const r of roots) {
     try {
-      all.push(...searchOne(r.path, r.id, q))
+      all.push(...searchOne(r.path, r.id, q, extrasByVault[r.id] ?? []))
     } catch {
       /* 跳过不可读根 */
     }
@@ -446,7 +478,8 @@ function withSuffix(rel: string, n: number): string {
   return dir ? `${dir}/${suffixed}` : suffixed
 }
 
-function uniqueRel(baseDir: string, rel: string): string {
+/** 在 baseDir 下取不重名路径（重名追加 ~N），隐私笔记移出时复用 */
+export function uniqueRel(baseDir: string, rel: string): string {
   if (!existsSync(join(baseDir, rel))) return rel
   for (let n = 1; n < 1000; n++) {
     const cand = withSuffix(rel, n)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NoteMeta } from '../../../preload/api'
 import { store } from '../store'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{ note: NoteMeta; showDir?: boolean }>()
 const emit = defineEmits<{ open: [id: string] }>()
@@ -27,6 +28,7 @@ function isActive(): boolean {
 <template>
   <div class="note-card" :class="{ active: isActive() }" @click="emit('open', note.id)">
     <div class="t">
+      <AppIcon v-if="note.private" name="lock" :size="12" title="隐私空间" />
       <span class="title">{{ note.title }}</span>
       <span v-if="isActive() && store.saving" class="dot saving" title="保存中"></span>
       <span v-else-if="isActive() && store.dirty" class="dot dirty" title="未保存"></span>

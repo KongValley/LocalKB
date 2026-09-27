@@ -1,5 +1,5 @@
 import { basename, resolve, sep } from 'node:path'
-import type { AiSettings, KbSettings, VaultInfo } from '../preload/api'
+import type { AiSettings, KbSettings, PrivacyKdf, PrivacySettings, VaultInfo } from '../preload/api'
 
 /**
  * 纯逻辑（不 import electron，可被 node 直跑单测）：
@@ -33,6 +33,24 @@ function normalizeAi(raw: unknown): AiSettings {
   }
 }
 
+function normalizeKdf(raw: unknown): PrivacyKdf | null {
+  if (raw === null || typeof raw !== 'object') return null
+  const N = 'N' in raw && typeof raw.N === 'number' && raw.N > 0 ? raw.N : 0
+  const r = 'r' in raw && typeof raw.r === 'number' && raw.r > 0 ? raw.r : 0
+  const p = 'p' in raw && typeof raw.p === 'number' && raw.p > 0 ? raw.p : 0
+  const keyLen = 'keyLen' in raw && typeof raw.keyLen === 'number' && raw.keyLen > 0 ? raw.keyLen : 0
+  return N && r && p && keyLen ? { N, r, p, keyLen } : null
+}
+
+function normalizePrivacy(raw: unknown): PrivacySettings | null {
+  if (raw === null || typeof raw !== 'object') return null
+  if (!('salt' in raw) || !('verifier' in raw) || !('kdf' in raw)) return null
+  const { salt, verifier } = raw
+  if (typeof salt !== 'string' || !salt || typeof verifier !== 'string' || !verifier) return null
+  const kdf = normalizeKdf(raw.kdf)
+  return kdf ? { salt, verifier, kdf } : null
+}
+
 /** 是否需要在加载时把文件重写为 v2（v1 vaultPath / 缺 vaults / 非法文件） */
 export function needsMigration(raw: unknown): boolean {
   if (raw === null || typeof raw !== 'object') return true
@@ -48,6 +66,7 @@ export function normalizeSettings(raw: unknown): KbSettings {
     vaults?: unknown
     defaultVaultId?: unknown
     ai?: unknown
+    privacy?: unknown
   }
   const vaults: VaultInfo[] = []
   if (Array.isArray(r.vaults)) {
@@ -73,7 +92,7 @@ export function normalizeSettings(raw: unknown): KbSettings {
   const defaultVaultId = vaults.some((v) => v.id === r.defaultVaultId)
     ? (r.defaultVaultId as string)
     : (vaults[0]?.id ?? null)
-  return { defaultVaultId, vaults, ai: normalizeAi(r.ai) }
+  return { defaultVaultId, vaults, ai: normalizeAi(r.ai), privacy: normalizePrivacy(r.privacy) }
 }
 
 function normPath(p: string): string {

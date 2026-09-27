@@ -1,5 +1,5 @@
 import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron'
-import { existsSync, readdirSync, watch, type FSWatcher } from 'node:fs'
+import { existsSync, readdirSync, statSync, watch, type FSWatcher } from 'node:fs'
 import { join } from 'node:path'
 import type {
   AiSettings,
@@ -15,6 +15,22 @@ import type {
 import { askKbAi } from './ai'
 import { effectiveDataDir, readPointer, setDataDir } from './data-dir'
 import {
+  changePrivacyPassword,
+  countPrivateFiles,
+  isPrivateRel,
+  isUnlocked,
+  lockPrivate,
+  moveIntoPrivacy,
+  moveOutOfPrivacy,
+  privacyConfigured,
+  readPrivateEntries,
+  readPrivatePayload,
+  renamePrivateNote,
+  setupPrivacy,
+  unlockPrivate,
+  writePrivateNote
+} from './private-space'
+import {
   addRoot,
   defaultRoot,
   ensureManagedRoot,
@@ -27,8 +43,11 @@ import {
   setDefaultRoot
 } from './settings'
 import {
+  baseName,
   buildGraph,
   buildIndex,
+  parseNote,
+  type PrivateExtra,
   createFolder,
   createNote,
   deleteFolder,
@@ -41,11 +60,13 @@ import {
   readNote,
   renameFolder,
   renameNote,
+  resolveInside,
   restoreTrash,
   saveImage,
   searchRoots,
   splitNodeId,
   toggleTodo,
+  uniqueRel,
   walkDirs,
   writeNote
 } from './vault'
@@ -142,9 +163,34 @@ function syncRoots(): VaultInfo[] {
   return roots
 }
 
+/* ── 隐私空间（解锁时才进入索引） ── */
+
+/** 解锁状态下按根分组的内存笔记（解密失败的文件已被跳过并告警） */
+function privateExtrasByVault(): Record<string, PrivateExtra[]> {
+  if (!isUnlocked()) return {}
+  const map: Record<string, PrivateExtra[]> = {}
+  for (const e of readPrivateEntries()) {
+    const list = map[e.vaultId] ?? []
+    list.push({
+      relPath: e.relPath,
+      originalRel: e.originalRel,
+      content: e.content,
+      mtimeMs: e.mtimeMs,
+      size: e.size
+    })
+    map[e.vaultId] = list
+  }
+  return map
+}
+
+const privacyCount = (): number => countPrivateFiles()
+
 /* ── 跨根合并 ── */
 
-function mergeIndex(roots: VaultInfo[]): { notes: NoteMeta[]; tags: TagCount[]; folders: FolderEntry[] } {
+function mergeIndex(
+  roots: VaultInfo[],
+  extras = privateExtrasByVault()
+): { notes: NoteMeta[]; tags: TagCount[]; folders: FolderEntry[] } {
   const notes: NoteMeta[] = []
   const folders: FolderEntry[] = []
   const tagMap = new Map<string, number>()
@@ -152,7 +198,7 @@ function mergeIndex(roots: VaultInfo[]): { notes: NoteMeta[]; tags: TagCount[]; 
     if (!existsSync(root.path)) continue
     let index
     try {
-      index = buildIndex(root.path, root.id)
+      index = buildIndex(root.path, root.id, extras[root.id] ?? [])
     } catch (e) {
       console.warn('kb: 索引失败，跳过该根', root.path, e)
       continue
@@ -167,13 +213,13 @@ function mergeIndex(roots: VaultInfo[]): { notes: NoteMeta[]; tags: TagCount[]; 
   return { notes, tags, folders }
 }
 
-function mergeGraph(roots: VaultInfo[]): GraphData {
+function mergeGraph(roots: VaultInfo[], extras = privateExtrasByVault()): GraphData {
   const nodes: GraphData['nodes'] = []
   const links: GraphLink[] = []
   for (const root of roots) {
     if (!existsSync(root.path)) continue
     try {
-      const g = buildGraph(root.path, root.id)
+      const g = buildGraph(root.path, root.id, buildIndex(root.path, root.id, extras[root.id] ?? []))
       nodes.push(...g.nodes)
       links.push(...g.links)
     } catch (e) {
@@ -295,12 +341,25 @@ export function registerKbIpc(win: BrowserWindow): void {
   /* 笔记 */
   handle('kb:note-read', (id: string) => {
     const { root, rel } = splitId(id)
+    if (isPrivateRel(rel)) return { ok: true, content: readPrivatePayload(root, rel).content }
     return { ok: true, content: readNote(root.path, rel) }
   })
 
   handle('kb:note-write', (payload: { id: string; content: string }) => {
     const { root, rel } = splitId(payload?.id)
-    const meta = writeNote(root.path, root.id, rel, String(payload?.content ?? ''))
+    const content = String(payload?.content ?? '')
+    if (isPrivateRel(rel)) {
+      const originalRel = readPrivatePayload(root, rel).relPath
+      writePrivateNote(root, rel, content)
+      const st = statSync(resolveInside(root.path, rel))
+      const meta = parseNote(rel, content, st, root.id)
+      broadcastIndex('op')
+      return {
+        ok: true,
+        meta: { ...meta, name: baseName(originalRel), dir: '', private: true, originalRel }
+      }
+    }
+    const meta = writeNote(root.path, root.id, rel, content)
     broadcastIndex('op')
     return { ok: true, meta }
   })
@@ -314,7 +373,14 @@ export function registerKbIpc(win: BrowserWindow): void {
 
   handle('kb:note-rename-move', (payload: { id: string; newRel: string }) => {
     const { root, rel } = splitId(payload?.id)
-    const next = renameNote(root.path, rel, String(payload?.newRel ?? ''))
+    const newRel = String(payload?.newRel ?? '')
+    if (isPrivateRel(rel)) {
+      // 隐私笔记改名 = 改密码负载里的原始路径，密文文件不移动
+      renamePrivateNote(root, rel, newRel)
+      broadcastIndex('op')
+      return { ok: true, id: joinNodeId(root.id, rel) }
+    }
+    const next = renameNote(root.path, rel, newRel)
     broadcastIndex('op')
     return { ok: true, id: joinNodeId(root.id, next) }
   })
@@ -378,7 +444,7 @@ export function registerKbIpc(win: BrowserWindow): void {
   /* 检索 / 图谱 / 待办 */
   handle('kb:search', (query: string) => ({
     ok: true,
-    results: searchRoots(getRoots(), String(query ?? ''))
+    results: searchRoots(getRoots(), String(query ?? ''), privateExtrasByVault())
   }))
 
   handle('kb:graph', () => {
@@ -387,9 +453,12 @@ export function registerKbIpc(win: BrowserWindow): void {
   })
 
   handle('kb:todos', () => {
+    const extras = privateExtrasByVault()
     const items = getRoots().flatMap((root) => {
       try {
-        return existsSync(root.path) ? listTodos(root.path, root.id) : []
+        return existsSync(root.path)
+          ? listTodos(root.path, root.id, buildIndex(root.path, root.id, extras[root.id] ?? []))
+          : []
       } catch (e) {
         console.warn('kb: 待办列举失败，跳过该根', root.path, e)
         return []
@@ -415,9 +484,66 @@ export function registerKbIpc(win: BrowserWindow): void {
   })
 
   handle('kb:image-save', (payload: { id: string; name: string; dataBase64: string }) => {
-    const { root } = splitId(payload?.id)
-    const rel = saveImage(root.path, payload?.name ?? '', payload?.dataBase64 ?? '')
-    return { ok: true, markdown: `![](${rel})` }
+    const { root, rel } = splitId(payload?.id)
+    if (isPrivateRel(rel)) throw new Error('隐私空间内的笔记暂不支持插入图片')
+    const saved = saveImage(root.path, payload?.name ?? '', payload?.dataBase64 ?? '')
+    return { ok: true, markdown: `![](${saved})` }
+  })
+
+  /* ── 隐私空间 ── */
+  handle('kb:privacy-status', () => ({
+    ok: true,
+    configured: privacyConfigured(),
+    unlocked: isUnlocked(),
+    count: privacyCount()
+  }))
+
+  handle('kb:privacy-setup', (password: string) => {
+    const pw = String(password ?? '')
+    if (pw.length < 6) throw new Error('密码至少 6 位')
+    setupPrivacy(pw)
+    broadcastIndex('op')
+    return { ok: true, count: privacyCount() }
+  })
+
+  handle('kb:privacy-unlock', (password: string) => {
+    if (!unlockPrivate(String(password ?? ''))) return { ok: false, error: '密码不正确' }
+    broadcastIndex('op')
+    return { ok: true, count: privacyCount() }
+  })
+
+  handle('kb:privacy-lock', () => {
+    lockPrivate()
+    broadcastIndex('op')
+    return { ok: true }
+  })
+
+  handle('kb:privacy-change-password', (payload: { oldPassword: string; newPassword: string }) => {
+    const next = String(payload?.newPassword ?? '')
+    if (next.length < 6) throw new Error('新密码至少 6 位')
+    const count = changePrivacyPassword(String(payload?.oldPassword ?? ''), next)
+    broadcastIndex('op')
+    return { ok: true, count }
+  })
+
+  handle('kb:privacy-enter', (id: string) => {
+    const { root, rel } = splitId(id)
+    if (isPrivateRel(rel)) throw new Error('该笔记已在隐私空间内')
+    if (!isUnlocked()) throw new Error('请先解锁隐私空间')
+    const content = readNote(root.path, rel)
+    const target = moveIntoPrivacy(root, rel, rel, content)
+    broadcastIndex('op')
+    return { ok: true, id: joinNodeId(root.id, target) }
+  })
+
+  handle('kb:privacy-leave', (id: string) => {
+    const { root, rel } = splitId(id)
+    if (!isPrivateRel(rel)) throw new Error('该笔记不在隐私空间内')
+    const original = readPrivatePayload(root, rel).relPath
+    const target = uniqueRel(root.path, original)
+    const next = moveOutOfPrivacy(root, rel, target)
+    broadcastIndex('op')
+    return { ok: true, id: joinNodeId(root.id, next) }
   })
 
   handle('kb:ai-ask', (query: string) => {

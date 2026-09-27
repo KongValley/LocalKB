@@ -6,6 +6,7 @@ import DailyPage from './views/DailyPage.vue'
 import GraphPage from './views/GraphPage.vue'
 import HomePage from './views/HomePage.vue'
 import NotesPage from './views/NotesPage.vue'
+import PrivatePage from './views/PrivatePage.vue'
 import SearchPage from './views/SearchPage.vue'
 import TagDetailPage from './views/TagDetailPage.vue'
 import TagsPage from './views/TagsPage.vue'
@@ -23,6 +24,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/tags', name: 'tags', component: TagsPage },
   { path: '/tags/:tag', name: 'tag-detail', component: TagDetailPage },
   { path: '/todos', name: 'todos', component: TodosPage },
+  { path: '/private', name: 'private', component: PrivatePage },
   { path: '/graph', name: 'graph', component: GraphPage },
   { path: '/ai', name: 'ai', component: AiPage },
   { path: '/about', name: 'about', component: AboutPage },

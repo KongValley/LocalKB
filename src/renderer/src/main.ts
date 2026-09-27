@@ -5,7 +5,7 @@ import { wireKbEvents } from '@renderer/KbEventBus'
 import { wireIpc } from '@renderer/ipc'
 import { rescan } from '@renderer/note'
 import router from '@renderer/router'
-import { store, syncState } from '@renderer/store'
+import { refreshPrivacy, store, syncState } from '@renderer/store'
 
 createApp(App).use(router).mount('#app')
 wireIpc()
@@ -17,6 +17,7 @@ async function bootstrap(): Promise<void> {
   const r = await window.kb.settingsGet()
   if (r.ok && r.settings.vaults.length > 0) {
     store.vaultReady = true
+    await refreshPrivacy()
     await rescan()
     if (router.currentRoute.value.name === 'welcome') await router.replace('/notes')
     return

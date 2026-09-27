@@ -63,7 +63,11 @@ function decryptSecret(enc: string): string {
 
 /** 落盘视图：加密可用时只写 apiKeyEnc，不写明文 apiKey */
 function fileViewOf(settings: KbSettings): Record<string, unknown> {
-  const base = { defaultVaultId: settings.defaultVaultId, vaults: settings.vaults }
+  const base = {
+    defaultVaultId: settings.defaultVaultId,
+    vaults: settings.vaults,
+    privacy: settings.privacy
+  }
   const key = settings.ai.apiKey.trim()
   if (!key) {
     return { ...base, ai: { baseURL: settings.ai.baseURL, model: settings.ai.model, apiKeyEnc: '' } }
@@ -125,7 +129,8 @@ export function savePartial(patch: { ai?: Partial<AiSettings> }): KbSettings {
   return saveSettings({
     defaultVaultId: current.defaultVaultId,
     vaults: current.vaults,
-    ai: { ...current.ai, ...(patch.ai ?? {}) }
+    ai: { ...current.ai, ...(patch.ai ?? {}) },
+    privacy: current.privacy
   })
 }
 
@@ -136,7 +141,8 @@ function mutate(patch: (next: KbSettings) => void): KbSettings {
   const next: KbSettings = {
     defaultVaultId: s.defaultVaultId,
     vaults: s.vaults.map((v) => ({ ...v })),
-    ai: { ...s.ai }
+    ai: { ...s.ai },
+    privacy: s.privacy
   }
   patch(next)
   return saveSettings(next)
@@ -207,7 +213,7 @@ export function ensureManagedRoot(): VaultInfo | null {
     try {
       mkdirSync(dir, { recursive: true })
       const root: VaultInfo = { id: MANAGED_ROOT_ID, path: dir, name: MANAGED_VAULT_NAME }
-      saveSettings({ defaultVaultId: root.id, vaults: [root], ai: s.ai })
+      saveSettings({ defaultVaultId: root.id, vaults: [root], ai: s.ai, privacy: s.privacy })
       return root
     } catch (e) {
       console.warn('kb: 无法创建默认知识库目录', dir, e)

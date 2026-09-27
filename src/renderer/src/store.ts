@@ -23,6 +23,7 @@ export const store = reactive({
   dirty: false,
   activeFolder: null as { vaultId: string; dir: string } | null,
   graph: null as GraphData | null,
+  privacy: { configured: false, unlocked: false, count: 0 },
   sideCollapsed: false,
   mode: (localStorage.getItem('md:mode') as EditorMode | null) ?? 'sv',
   theme: readStoredTheme(),
@@ -97,6 +98,12 @@ export function activeVaultName(): string {
     }
   }
   return defaultVault()?.name ?? '知识库'
+}
+
+/** 刷新隐私空间状态（解锁/配置/密文计数） */
+export async function refreshPrivacy(): Promise<void> {
+  const r = await window.kb.privacyStatus()
+  if (r.ok) store.privacy = { configured: r.configured, unlocked: r.unlocked, count: r.count }
 }
 
 export function syncState(): void {

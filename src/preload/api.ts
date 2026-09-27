@@ -31,10 +31,25 @@ export interface VaultInfo {
   name: string
 }
 
+export interface PrivacyKdf {
+  N: number
+  r: number
+  p: number
+  keyLen: number
+}
+
+/** 隐私空间密码校验信息（盐与校验值；真实文件各自带独立盐） */
+export interface PrivacySettings {
+  salt: string
+  verifier: string
+  kdf: PrivacyKdf
+}
+
 export interface KbSettings {
   defaultVaultId: string | null
   vaults: VaultInfo[]
   ai: AiSettings
+  privacy: PrivacySettings | null
 }
 
 export interface TodoItem {
@@ -62,6 +77,10 @@ export interface NoteMeta {
   todos: TodoItem[]
   /** 首个非空正文行，截 120 字 */
   snippet: string
+  /** 隐私空间内的笔记（仅在解锁时进入索引） */
+  private?: boolean
+  /** 隐私笔记移入前的原始相对路径（展示名/改名的依据） */
+  originalRel?: string
 }
 
 export interface TagCount {
@@ -179,6 +198,18 @@ export interface KbApi {
   imageSave(id: string, name: string, dataBase64: string): Promise<{ ok: true; markdown: string } | Err>
   aiAsk(query: string): Promise<{ ok: true; answer: string; sources: string[] } | Err>
   onKbEvent(cb: (e: { type: 'index'; source: 'op' | 'watch' }) => void): () => void
+
+  /* ── 隐私空间（加密存储） ── */
+  privacyStatus(): Promise<{ ok: true; configured: boolean; unlocked: boolean; count: number } | Err>
+  privacySetup(password: string): Promise<{ ok: true; count: number } | Err>
+  privacyUnlock(password: string): Promise<{ ok: true; count: number } | Err>
+  privacyLock(): Promise<{ ok: true } | Err>
+  privacyChangePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<{ ok: true; count: number } | Err>
+  privacyEnter(id: string): Promise<{ ok: true; id: string } | Err>
+  privacyLeave(id: string): Promise<{ ok: true; id: string } | Err>
 }
 
 export interface MdApi {

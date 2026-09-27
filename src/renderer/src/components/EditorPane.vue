@@ -9,9 +9,11 @@ import {
   exportPdfDoc,
   openNote,
   renameActive,
+  rescan,
   setEditor
 } from '../note'
-import { fileNameOf, onEditorInput, store } from '../store'
+import AppIcon from './AppIcon.vue'
+import { activeNote, fileNameOf, onEditorInput, store } from '../store'
 import MdEditor from './MdEditor.vue'
 import StatusBar from './StatusBar.vue'
 
@@ -21,10 +23,35 @@ const titleDraft = ref('')
 watch(
   () => store.activeId,
   (id) => {
-    titleDraft.value = id ? fileNameOf(id) : ''
+    const note = activeNote()
+    titleDraft.value = id ? (note?.name ?? fileNameOf(id)) : ''
   },
   { immediate: true }
 )
+
+const isPrivate = computed(() => activeNote()?.private === true)
+
+async function togglePrivacy(moveIn: boolean): Promise<void> {
+  const id = store.activeId
+  if (!id) return
+  if (moveIn && !store.privacy.configured) {
+    alert('请先在「隐私空间」页设置密码')
+    await router.push('/private')
+    return
+  }
+  if (moveIn && !store.privacy.unlocked) {
+    alert('请先在「隐私空间」页解锁')
+    await router.push('/private')
+    return
+  }
+  const r = moveIn ? await window.kb.privacyEnter(id) : await window.kb.privacyLeave(id)
+  if (!r.ok) {
+    alert(`${moveIn ? '移入' : '移出'}隐私空间失败：${r.error}`)
+    return
+  }
+  await rescan()
+  await openNote(r.id)
+}
 
 // 索引事件会把 store.graph 置空；有打开的笔记时按需重拉（提及条数据源）
 watchEffect(() => {
@@ -78,10 +105,16 @@ async function moveToTrash(): Promise<void> {
         @keydown.enter="commitTitle"
         @blur="commitTitle"
       />
+      <span v-if="isPrivate" class="kb-page-sub privacy-badge">
+        <AppIcon name="lock" :size="12" />
+        隐私空间
+      </span>
       <span v-if="store.saving" class="dot saving" title="保存中"></span>
       <span v-else-if="store.dirty" class="dot dirty" title="未保存"></span>
       <button class="btn" @click="exportHtmlDoc()">导出 HTML</button>
       <button class="btn" @click="exportPdfDoc()">导出 PDF</button>
+      <button v-if="isPrivate" class="btn" @click="togglePrivacy(false)">移出隐私空间</button>
+      <button v-else class="btn" @click="togglePrivacy(true)">移入隐私空间</button>
       <button class="btn" @click="moveToTrash()">移入回收站</button>
     </div>
 
@@ -130,3 +163,12 @@ async function moveToTrash(): Promise<void> {
     <StatusBar v-if="store.activeId" />
   </div>
 </template>
+
+<style scoped>
+.privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #c26a00;
+}
+</style>

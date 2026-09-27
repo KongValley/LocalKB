@@ -215,6 +215,19 @@ onBeforeUnmount(() => {
     <div class="kb-side-foot">
       <button
         class="kb-nav-item"
+        :class="{ active: route.path === '/private' }"
+        :title="store.privacy.unlocked ? '隐私空间（已解锁）' : '隐私空间（已锁定）'"
+        @click="router.push('/private')"
+      >
+        <span class="ico">
+          <AppIcon :name="store.privacy.unlocked ? 'unlock' : 'lock'" :size="16" />
+        </span>
+        <template v-if="!store.sideCollapsed">
+          隐私空间{{ store.privacy.count ? `（${store.privacy.count}）` : '' }}
+        </template>
+      </button>
+      <button
+        class="kb-nav-item"
         :class="{ active: route.path === '/trash' }"
         title="回收站"
         @click="router.push('/trash')"

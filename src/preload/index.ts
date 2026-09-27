@@ -49,6 +49,14 @@ const kb: KbApi = {
   daily: () => ipcRenderer.invoke('kb:daily'),
   imageSave: (id, name, dataBase64) => ipcRenderer.invoke('kb:image-save', { id, name, dataBase64 }),
   aiAsk: (query) => ipcRenderer.invoke('kb:ai-ask', query),
+  privacyStatus: () => ipcRenderer.invoke('kb:privacy-status'),
+  privacySetup: (password) => ipcRenderer.invoke('kb:privacy-setup', password),
+  privacyUnlock: (password) => ipcRenderer.invoke('kb:privacy-unlock', password),
+  privacyLock: () => ipcRenderer.invoke('kb:privacy-lock'),
+  privacyChangePassword: (oldPassword, newPassword) =>
+    ipcRenderer.invoke('kb:privacy-change-password', { oldPassword, newPassword }),
+  privacyEnter: (id) => ipcRenderer.invoke('kb:privacy-enter', id),
+  privacyLeave: (id) => ipcRenderer.invoke('kb:privacy-leave', id),
   onKbEvent: (cb) => {
     const listener = (_e: IpcRendererEvent, payload: { type: 'index'; source: 'op' | 'watch' }): void =>
       cb(payload)
