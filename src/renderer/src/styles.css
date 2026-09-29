@@ -684,6 +684,7 @@ body {
 .bubble {
   width: fit-content;
   max-width: 76%;
+  box-sizing: border-box;
   padding: 8px 12px;
   border-radius: 10px;
   margin-bottom: 10px;
