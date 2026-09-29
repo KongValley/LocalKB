@@ -67,6 +67,9 @@ export function wireIpc(): void {
         return setMode(a.mode)
       case 'view:toggle-theme':
         return toggleTheme()
+      case 'view:help':
+        void router.push('/help')
+        return
     }
   })
 

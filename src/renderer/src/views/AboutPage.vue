@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import { addVault } from '../ipc'
 import { rescan } from '../note'
 import { store } from '../store'
 
 const APP_NAME = '知识库'
-const APP_VERSION = '1.1.4'
+const appVersion = __APP_VERSION__
 
+const router = useRouter()
 const dataDir = ref<string | null>(null)
 const effectiveDir = ref('')
 const dataMsg = ref('')
@@ -28,6 +30,10 @@ async function loadDataDir(): Promise<void> {
 onMounted(() => {
   void loadDataDir()
 })
+
+function goHelp(): void {
+  void router.push('/help')
+}
 
 onBeforeUnmount(() => {
   if (confirmTimer) clearTimeout(confirmTimer)
@@ -135,7 +141,7 @@ function restart(): void {
     <div class="card about-card">
       <img class="about-logo" :src="'logo.svg'" :alt="APP_NAME" />
       <div class="about-name">{{ APP_NAME }}</div>
-      <div class="kb-page-sub">版本 {{ APP_VERSION }}</div>
+      <div class="kb-page-sub">版本 {{ appVersion }}</div>
       <p class="about-desc">基于 Electron + Vue 3 + Vditor 的本地知识库</p>
     </div>
 
@@ -206,6 +212,15 @@ function restart(): void {
         <span class="kb-page-sub">已扫描笔记 {{ store.notes.length }} 篇</span>
         <span class="spacer"></span>
         <button class="btn" @click="rescan">重新扫描</button>
+      </div>
+    </div>
+
+    <div class="card about-block">
+      <div class="about-row">
+        <span class="about-label">使用说明</span>
+        <span class="kb-page-sub">功能与快捷键速查</span>
+        <span class="spacer"></span>
+        <button class="btn" @click="goHelp">打开使用说明</button>
       </div>
     </div>
   </div>

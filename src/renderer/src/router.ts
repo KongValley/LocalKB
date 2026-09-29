@@ -4,6 +4,7 @@ import AboutPage from './views/AboutPage.vue'
 import AiPage from './views/AiPage.vue'
 import DailyPage from './views/DailyPage.vue'
 import GraphPage from './views/GraphPage.vue'
+import HelpPage from './views/HelpPage.vue'
 import HomePage from './views/HomePage.vue'
 import NotesPage from './views/NotesPage.vue'
 import PrivatePage from './views/PrivatePage.vue'
@@ -27,6 +28,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/private', name: 'private', component: PrivatePage },
   { path: '/graph', name: 'graph', component: GraphPage },
   { path: '/ai', name: 'ai', component: AiPage },
+  { path: '/help', name: 'help', component: HelpPage },
   { path: '/about', name: 'about', component: AboutPage },
   { path: '/trash', name: 'trash', component: TrashPage },
   { path: '/:pathMatch(.*)*', redirect: '/' }

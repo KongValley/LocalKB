@@ -13,6 +13,7 @@ export type MenuAction =
   | { type: 'export:pdf' }
   | { type: 'view:mode'; mode: EditorMode }
   | { type: 'view:toggle-theme' }
+  | { type: 'view:help' }
 
 /* ── 知识库领域模型（主进程 vault.ts 与渲染进程共用） ── */
 

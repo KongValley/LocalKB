@@ -19,6 +19,7 @@ const NAV: { path: string; icon: string; label: string }[] = [
   { path: '/todos', icon: 'todo', label: '待办' },
   { path: '/graph', icon: 'graph', label: '知识图谱' },
   { path: '/ai', icon: 'ai', label: 'AI 问答' },
+  { path: '/help', icon: 'search', label: '使用说明' },
   { path: '/about', icon: 'info', label: '关于' }
 ]
 

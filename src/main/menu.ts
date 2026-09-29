@@ -43,6 +43,7 @@ export function buildMenu(win: BrowserWindow): Menu {
         { label: '所见即所得', click: () => send({ type: 'view:mode', mode: 'wysiwyg' }) },
         { label: '切换主题', click: () => send({ type: 'view:toggle-theme' }) },
         { label: '侧栏', click: () => send({ type: 'kb:toggle-side' }) },
+        { label: '使用说明', click: () => send({ type: 'view:help' }) },
         { type: 'separator' },
         { label: '重新加载', role: 'reload' },
         { label: '开发者工具', role: 'toggleDevTools' },
