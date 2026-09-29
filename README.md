@@ -2,25 +2,29 @@
 
 基于 Electron 的本地中文知识库桌面应用：笔记就是磁盘上的普通 `.md` 文件，可被任意编辑器/同步工具直接读写；应用负责索引、双链、标签、待办、图谱与 AI 问答。
 
+版本历史见 [CHANGELOG.md](CHANGELOG.md)；下载见 [Releases](https://github.com/KongValley/LocalKB/releases)。
+
 - 技术栈：Electron 44 + electron-vite 5 + Vue 3.5 + vue-router 4 + Vditor 4 + TypeScript 5.9
-- 打包：electron-builder 26（Windows NSIS，产物 `知识库-Setup-<version>.exe`，可自定义安装目录）
+- 打包：electron-builder 26（Windows NSIS，产物 `knowledge-base-Setup-<version>.exe`，可自定义安装目录）
 - 全部第三方运行时资源（Vditor / Mermaid / KaTeX / ECharts 等）随包离线提供，无需联网
 
 ## 功能
 
 | 模块 | 说明 |
 | --- | --- |
-| 首页 | 笔记/标签/待办统计、最近编辑、快捷操作 |
+| 首页 | 笔记/标签/待办统计、**未完成待办卡（可直接勾选回写）**、最近编辑、快捷操作（含快速打开入口）；空库时提供「创建示例笔记」引导 |
 | 笔记 | 左侧笔记列表（标题本地过滤、按修改时间倒序、按文件夹筛选）+ 右侧 Vditor 编辑器（分栏预览 / 所见即所得切换） |
-| 搜索 | 全文打分检索（标题/文件名 +10、H1 +5、正文行 +1），结果按行高亮 |
+| 搜索 | 全文打分检索（标题/文件名 +10、H1 +5、正文行 +1），输入即搜（300ms 防抖），结果按行高亮，点结果自动跳转并定位闪烁 |
 | 每日笔记 | 一键生成/打开 `daily/YYYY-MM-DD.md` |
 | 标签 | 内联 `#标签` 的标签云与标签详情 |
 | 待办 | 汇总 `- [ ]` / `- [x]`，勾选直接回写原文件对应行 |
 | 知识图谱 | 基于 `[[双链]]` 的力导向图（ECharts），可按知识库着色、含孤立节点开关 |
-| AI 问答 | OpenAI 兼容接口（DeepSeek / 通义 / Kimi / 智谱 / OpenAI），主进程直连、非流式，RAG 取关键词命中的前 8 篇笔记作为上下文 |
+| AI 问答 | OpenAI 兼容接口（DeepSeek / 通义 / Kimi / 智谱 / OpenAI），主进程直连、**SSE 流式**输出；RAG 取关键词命中的前 8 篇笔记作为上下文；支持**多轮对话、生成中停止、复制 / 重新生成 / 清空**，会话切页与重启后保留 |
+| 快速打开 | `Ctrl/Cmd + P`（或 `Ctrl/Cmd + K`）呼出面板，按标题/文件名/路径子序列过滤，↑↓ 选择、回车直达 |
+| 使用说明 | 内置功能与快捷键速查页（侧栏「使用说明」、菜单「视图 → 使用说明」、关于页入口） |
 | 回收站 | 删除先进 `.trash/`（保留原相对路径，重名加 `~N`），支持还原、彻底删除、清空 |
-| 编辑器 | 800ms 防抖自动保存、`Ctrl/Cmd+S` 立即保存、切换笔记前强制落盘、保存中/未保存状态指示 |
-| 图片 | 粘贴/拖入图片自动存入 `<库>/assets/<时间戳>-<安全名>`，正文写相对路径；渲染时经 `kbvault://` 协议按库加载 |
+| 编辑器 | 800ms 防抖自动保存、`Ctrl/Cmd+S` 立即保存、切换笔记前强制落盘、保存中/未保存状态指示；右侧**大纲与渲染预览可一键收放**（状态记忆）；`Ctrl/Cmd + =` / `-` / `0` 调节字号（状态栏可点击复位）；状态栏含阅读时长估算 |
+| 图片 | 粘贴/拖入图片自动存入 `<库>/assets/<时间戳>-<安全名>`，正文写相对路径；渲染时经 `kbvault://` 协议按库加载；预览/聊天区点击图片**全屏放大**（Esc 关闭） |
 | 导出 | HTML（保持相对路径，便携）/ PDF（图片改写为 `kbvault://` 绝对地址） |
 | 关闭保护 | 有未保存修改时弹出「保存并退出 / 不保存退出 / 取消」 |
 | 版本更新 | 启动后自动检查 GitHub Releases（electron-updater），新版本后台下载完成后提示「重启安装」；菜单「文件 → 检查更新…」可手动检查 |
@@ -67,12 +71,16 @@
 
 | 快捷键 | 作用 |
 | --- | --- |
+| `Ctrl/Cmd + P` / `Ctrl/Cmd + K` | 快速打开面板（输入即过滤，↑↓ 选择，回车打开） |
 | `Ctrl/Cmd + N` | 新建笔记 |
 | `Ctrl/Cmd + D` | 生成/打开今日笔记 |
 | `Ctrl/Cmd + Shift + F` | 发起搜索 |
 | `Ctrl/Cmd + S` | 立即保存当前笔记 |
+| `Ctrl/Cmd + =` / `Ctrl/Cmd + -` | 增大 / 减小编辑器字号 |
+| `Ctrl/Cmd + 0` | 字号复位为 15px |
+| `Esc` | 关闭快速打开面板 / 图片放大层 |
 
-菜单另含：导出为 HTML / PDF、重新扫描知识库、添加知识库目录、侧栏开合、源码分栏/所见即所得、切换主题。
+菜单另含：导出为 HTML / PDF、重新扫描知识库、添加知识库目录、侧栏开合、源码分栏/所见即所得、切换主题、使用说明。
 
 ## 开发
 
@@ -89,8 +97,20 @@ npm start            # 预览构建产物
 ```bash
 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ \
 ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ \
-npm run build:win    # → dist/知识库-Setup-<version>.exe
+npm run build:win    # → dist/knowledge-base-Setup-<version>.exe（另含 latest.yml / *.blockmap）
 ```
+
+### 发版（GitHub Actions 自动打包发布）
+
+推 tag 即发布，产物在 GitHub runner 上构建并直接上传 Release，本机无需上传安装包：
+
+```bash
+# 1. 编辑 .github/release-notes.md 填好「新增 / 修复」条目并提交推送
+# 2. 打 tag 推送（版本号由 tag 注入，格式 vX.Y.Z）
+git tag v1.3.1 && git push origin v1.3.1
+```
+
+workflow 见 `.github/workflows/release.yml`：校验 tag 格式 → `npm version` 注入版本号 → `npm ci` + `build:win` → 上传 `knowledge-base-Setup-<v>.exe` + `latest.yml` + `*.blockmap` 三份资产（缺 `latest.yml` 客户端检查不到更新）。
 
 ## 目录结构
 
@@ -112,8 +132,8 @@ src/
 └── renderer/src/          # 渲染进程（Vue 3）
     ├── note.ts            # 笔记生命周期唯一入口（打开/落盘/新建/改名/删除/每日）
     ├── store.ts           # 全局响应式状态（无 Pinia）
-    ├── components/        # SideBar / FolderNode / EditorPane / MdEditor / StatusBar …
-    └── views/             # 首页 / 笔记 / 搜索 / 每日 / 标签 / 待办 / 图谱 / AI / 关于 / 回收站 / 欢迎
+    ├── components/        # SideBar / FolderNode / EditorPane / MdEditor / QuickOpen / Lightbox / StatusBar …
+    └── views/             # 首页 / 笔记 / 搜索 / 每日 / 标签 / 待办 / 图谱 / AI / 使用说明 / 关于 / 回收站 / 欢迎
 ```
 
 ### 数据模型要点
