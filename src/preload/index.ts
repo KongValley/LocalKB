@@ -48,7 +48,15 @@ const kb: KbApi = {
   todoToggle: (id, line, done) => ipcRenderer.invoke('kb:todo-toggle', { id, line, done }),
   daily: () => ipcRenderer.invoke('kb:daily'),
   imageSave: (id, name, dataBase64) => ipcRenderer.invoke('kb:image-save', { id, name, dataBase64 }),
-  aiAsk: (query) => ipcRenderer.invoke('kb:ai-ask', query),
+  aiAsk: (query, history) => ipcRenderer.invoke('kb:ai-ask', { query, history }),
+  aiStop: () => ipcRenderer.invoke('kb:ai-stop'),
+  onAiChunk: (cb) => {
+    const listener = (_e: IpcRendererEvent, delta: string): void => cb(delta)
+    ipcRenderer.on('kb:ai-chunk', listener)
+    return () => {
+      ipcRenderer.removeListener('kb:ai-chunk', listener)
+    }
+  },
   privacyStatus: () => ipcRenderer.invoke('kb:privacy-status'),
   privacySetup: (password) => ipcRenderer.invoke('kb:privacy-setup', password),
   privacyUnlock: (password) => ipcRenderer.invoke('kb:privacy-unlock', password),

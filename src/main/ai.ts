@@ -103,11 +103,33 @@ export function chatEndpoint(baseURL: string): string {
   return `${base}/v1/chat/completions`
 }
 
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const HISTORY_TURNS = 6
+const HISTORY_CLIP = 500
+
+/** 裁剪多轮历史：最近 6 条、每条 500 字 */
+export function clipHistory(history: ChatTurn[]): ChatTurn[] {
+  return history
+    .slice(-HISTORY_TURNS)
+    .map((t) => ({ role: t.role, content: t.content.slice(0, HISTORY_CLIP) }))
+}
+
+/**
+ * 多轮流式问答：SSE 逐段 onDelta；externalAbort（用户停止）→ { ok:true, stopped:true }，
+ * 已流出文本由渲染层持有。服务器不支持流式（非 event-stream）时整段兜底一次 onDelta。
+ */
 export async function askKbAi(
   roots: Root[],
   ai: AiSettings,
-  query: string
-): Promise<{ ok: true; answer: string; sources: string[] } | Err> {
+  query: string,
+  history: ChatTurn[],
+  onDelta: (delta: string) => void,
+  externalAbort: AbortSignal
+): Promise<{ ok: true; sources: string[]; stopped?: boolean } | Err> {
   if (!ai.apiKey.trim()) return { ok: false, error: '请先在设置里填写 API Key' }
   if (!ai.model.trim()) return { ok: false, error: '请先在设置里填写模型名称' }
 
@@ -115,8 +137,16 @@ export async function askKbAi(
   const sources = picked.map((p) => p.id)
   const context = buildContext(picked)
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...clipHistory(history),
+    { role: 'user', content: `笔记：\n${context}\n问题：${query}` }
+  ]
+
+  const ctrl = new AbortController()
+  const onOuterAbort = (): void => ctrl.abort()
+  externalAbort.addEventListener('abort', onOuterAbort)
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
     const res = await fetch(chatEndpoint(ai.baseURL), {
       method: 'POST',
@@ -124,36 +154,71 @@ export async function askKbAi(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${ai.apiKey.trim()}`
       },
-      body: JSON.stringify({
-        model: ai.model.trim(),
-        stream: false,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `笔记：\n${context}\n问题：${query}` }
-        ]
-      }),
-      signal: controller.signal
+      body: JSON.stringify({ model: ai.model.trim(), stream: true, messages }),
+      signal: ctrl.signal
     })
-    const text = await res.text()
     if (!res.ok) {
+      const text = await res.text()
       return { ok: false, error: `请求失败（HTTP ${res.status}）：${text.slice(0, 300)}` }
     }
-    let answer = text
-    try {
-      const body = JSON.parse(text) as {
-        choices?: { message?: { content?: unknown } }[]
+    const contentType = res.headers.get('content-type') ?? ''
+    if (!contentType.includes('text/event-stream')) {
+      // 服务器不支持流式：整段兜底
+      const text = await res.text()
+      let answer = text
+      try {
+        const body = JSON.parse(text) as {
+          choices?: { message?: { content?: unknown } }[]
+        }
+        const content = body.choices?.[0]?.message?.content
+        if (typeof content === 'string' && content.trim()) answer = content
+      } catch {
+        /* 非 JSON 响应：按原文返回 */
       }
-      const content = body.choices?.[0]?.message?.content
-      if (typeof content === 'string' && content.trim()) answer = content
-    } catch {
-      /* 非 JSON 响应：按原文返回 */
+      onDelta(answer)
+      return { ok: true, sources }
     }
-    return { ok: true, answer, sources }
+    if (!res.body) return { ok: false, error: 'AI 请求失败：响应无内容流' }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    let sawDone = false
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      const frames = buf.split('\n\n')
+      buf = frames.pop() ?? ''
+      for (const frame of frames) {
+        for (const line of frame.split('\n')) {
+          if (!line.startsWith('data:')) continue
+          const payload = line.slice(5).trim()
+          if (!payload) continue
+          if (payload === '[DONE]') {
+            sawDone = true
+            continue
+          }
+          try {
+            const j = JSON.parse(payload) as { choices?: { delta?: { content?: unknown } }[] }
+            const c = j.choices?.[0]?.delta?.content
+            if (typeof c === 'string' && c) onDelta(c)
+          } catch {
+            /* 跳过坏帧 */
+          }
+        }
+      }
+      if (sawDone) break
+    }
+    return { ok: true, sources }
   } catch (e) {
     const err = e as Error
-    if (err?.name === 'AbortError') return { ok: false, error: '请求超时（60 秒）' }
+    if (err?.name === 'AbortError') {
+      if (externalAbort.aborted) return { ok: true, sources: [], stopped: true }
+      return { ok: false, error: '请求超时（60 秒）' }
+    }
     return { ok: false, error: `AI 请求失败：${String(err?.message ?? e)}` }
   } finally {
     clearTimeout(timer)
+    externalAbort.removeEventListener('abort', onOuterAbort)
   }
 }

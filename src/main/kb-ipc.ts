@@ -546,9 +546,24 @@ export function registerKbIpc(win: BrowserWindow): void {
     return { ok: true, id: joinNodeId(root.id, next) }
   })
 
-  handle('kb:ai-ask', (query: string) => {
+  let aiAbort: AbortController | null = null
+  handle('kb:ai-ask', (payload: { query: string; history: { role: 'user' | 'assistant'; content: string }[] }) => {
     const roots = getRoots().filter((r) => existsSync(r.path))
     if (roots.length === 0) throw new Error('尚未设置知识库目录')
-    return askKbAi(roots, getSettings().ai, String(query ?? ''))
+    aiAbort = new AbortController()
+    return askKbAi(
+      roots,
+      getSettings().ai,
+      String(payload?.query ?? ''),
+      Array.isArray(payload?.history) ? payload.history : [],
+      (delta) => win.webContents.send('kb:ai-chunk', delta),
+      aiAbort.signal
+    ).finally(() => {
+      aiAbort = null
+    })
+  })
+  handle('kb:ai-stop', () => {
+    aiAbort?.abort()
+    return { ok: true }
   })
 }

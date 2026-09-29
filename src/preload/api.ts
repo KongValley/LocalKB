@@ -196,7 +196,13 @@ export interface KbApi {
   todoToggle(id: string, line: number, done: boolean): Promise<{ ok: true } | Err>
   daily(): Promise<{ ok: true; id: string } | Err>
   imageSave(id: string, name: string, dataBase64: string): Promise<{ ok: true; markdown: string } | Err>
-  aiAsk(query: string): Promise<{ ok: true; answer: string; sources: string[] } | Err>
+  aiAsk(
+    query: string,
+    history: { role: 'user' | 'assistant'; content: string }[]
+  ): Promise<{ ok: true; sources: string[]; stopped?: boolean } | Err>
+  aiStop(): Promise<{ ok: true }>
+  /** 流式增量：每次 AI 返回一个文本片段 */
+  onAiChunk(cb: (delta: string) => void): () => void
   onKbEvent(cb: (e: { type: 'index'; source: 'op' | 'watch' }) => void): () => void
 
   /* ── 隐私空间（加密存储） ── */
