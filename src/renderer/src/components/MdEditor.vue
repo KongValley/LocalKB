@@ -20,6 +20,7 @@ const emit = defineEmits<{
 const host = ref<HTMLDivElement | null>(null)
 let vditor: Vditor | null = null
 let observer: MutationObserver | null = null
+let outlineAutoOpened = false
 
 function toBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf)
@@ -119,6 +120,12 @@ onMounted(() => {
       observer = new MutationObserver(() => fixImages())
       observer.observe(host.value!, { subtree: true, childList: true })
       fixImages()
+      // vditor 大纲面板默认 display:none；每个会话首次挂载自动展开一次，此后由用户经工具栏收放
+      if (!outlineAutoOpened) {
+        outlineAutoOpened = true
+        const btn = host.value!.querySelector<HTMLElement>('.vditor-toolbar [data-type=outline]')
+        if (btn && !btn.classList.contains('vditor-menu--current')) btn.click()
+      }
       emit('ready', vd)
     },
     input: (value) => emit('input', value)

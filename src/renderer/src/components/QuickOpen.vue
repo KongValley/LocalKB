@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import type { NoteMeta } from '../../../preload/api'
 import AppIcon from './AppIcon.vue'
-import { fileNameOf, store, vaultNameById } from '../store'
+import { store, vaultNameById } from '../store'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ close: []; open: [id: string] }>()
