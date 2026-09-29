@@ -682,6 +682,7 @@ body {
 }
 
 .bubble {
+  position: relative;
   width: fit-content;
   max-width: 76%;
   box-sizing: border-box;
@@ -1060,15 +1061,21 @@ body {
 }
 
 .bubble .acts {
+  position: absolute;
+  right: 4px;
+  bottom: -22px;
+  z-index: 5;
   display: flex;
   gap: 6px;
-  margin-top: 6px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.15s;
 }
 
-.bubble:hover .acts {
+.bubble:hover .acts,
+.bubble .acts:hover {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .bubble .acts .mini {

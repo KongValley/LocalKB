@@ -216,7 +216,7 @@ export async function askKbAi(
       if (externalAbort.aborted) return { ok: true, sources: [], stopped: true }
       return { ok: false, error: '请求超时（60 秒）' }
     }
-    return { ok: false, error: `AI 请求失败：${String(err?.message ?? e)}` }
+    return { ok: false, error: `AI 请求失败：${String(err?.message ?? e)}${(e as { cause?: unknown })?.cause ? `（${String((e as { cause?: unknown }).cause)}）` : ''}` }
   } finally {
     clearTimeout(timer)
     externalAbort.removeEventListener('abort', onOuterAbort)
