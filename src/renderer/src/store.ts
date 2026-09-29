@@ -28,6 +28,8 @@ export const store = reactive({
   mode: (localStorage.getItem('md:mode') as EditorMode | null) ?? 'sv',
   theme: readStoredTheme(),
   editorFontSize: readStoredFont(),
+  editorOutlineVisible: readStoredBool('kb:outline-visible', true),
+  editorPreviewVisible: readStoredBool('kb:preview-visible', true),
   lightboxSrc: null as string | null,
   charCount: 0,
   lineCount: 1
@@ -42,6 +44,12 @@ function readStoredTheme(): AppTheme {
 function readStoredFont(): number {
   const n = Number(localStorage.getItem('kb:editor-font'))
   return Number.isInteger(n) && n >= 12 && n <= 24 ? n : 15
+}
+
+/** 布尔持久化归一：缺省用 fallback，'0' 视为 false */
+function readStoredBool(key: string, fallback: boolean): boolean {
+  const raw = localStorage.getItem(key)
+  return raw === null ? fallback : raw !== '0'
 }
 
 /** note.ts 注入的自动保存调度（避免 store ↔ note 循环依赖） */
@@ -140,6 +148,16 @@ watch(
 watch(
   () => store.editorFontSize,
   (fs) => localStorage.setItem('kb:editor-font', String(fs))
+)
+
+watch(
+  () => store.editorOutlineVisible,
+  (v) => localStorage.setItem('kb:outline-visible', v ? '1' : '0')
+)
+
+watch(
+  () => store.editorPreviewVisible,
+  (v) => localStorage.setItem('kb:preview-visible', v ? '1' : '0')
 )
 
 watch(

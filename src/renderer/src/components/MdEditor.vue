@@ -20,7 +20,6 @@ const emit = defineEmits<{
 const host = ref<HTMLDivElement | null>(null)
 let vditor: Vditor | null = null
 let observer: MutationObserver | null = null
-let outlineAutoOpened = false
 
 function toBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf)
@@ -81,7 +80,6 @@ onMounted(() => {
       'inline-code',
       'link',
       '|',
-      'outline',
       'undo',
       'redo'
     ],
@@ -120,12 +118,6 @@ onMounted(() => {
       observer = new MutationObserver(() => fixImages())
       observer.observe(host.value!, { subtree: true, childList: true })
       fixImages()
-      // vditor 大纲面板默认 display:none；每个会话首次挂载自动展开一次，此后由用户经工具栏收放
-      if (!outlineAutoOpened) {
-        outlineAutoOpened = true
-        const btn = host.value!.querySelector<HTMLElement>('.vditor-toolbar [data-type=outline]')
-        if (btn && !btn.classList.contains('vditor-menu--current')) btn.click()
-      }
       emit('ready', vd)
     },
     input: (value) => emit('input', value)
@@ -150,7 +142,14 @@ defineExpose({ getValue: (): string => vditor?.getValue() ?? '' })
 </script>
 
 <template>
-  <div ref="host" class="md-editor-host" :style="{ '--kb-fs': store.editorFontSize + 'px' }"></div>
+  <!-- 类绑定放 wrapper：vditor 会在宿主上命令式加 .vditor 根类，Vue class 补丁会把它抹掉 -->
+  <div
+    class="md-editor-wrap"
+    :class="{ 'outline-on': store.editorOutlineVisible, 'hide-preview': !store.editorPreviewVisible }"
+    :style="{ '--kb-fs': store.editorFontSize + 'px' }"
+  >
+    <div ref="host" class="md-editor-host"></div>
+  </div>
 </template>
 
 <style scoped>
@@ -162,6 +161,19 @@ defineExpose({ getValue: (): string => vditor?.getValue() ?? '' })
 .md-editor-host :deep(.vditor) {
   border: none;
   border-radius: 0;
+}
+
+.md-editor-wrap {
+  height: 100%;
+}
+
+/* 大纲/预览由应用侧单一接管（工具栏 outline 项已移除，避免双控制方） */
+.md-editor-wrap.outline-on :deep(.vditor-outline) {
+  display: block !important;
+}
+
+.md-editor-wrap.hide-preview :deep(.vditor-preview) {
+  display: none !important;
 }
 
 /* 编辑器字号链：--kb-fs 由宿主注入（store.editorFontSize） */

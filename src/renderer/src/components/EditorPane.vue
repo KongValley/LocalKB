@@ -111,6 +111,23 @@ async function moveToTrash(): Promise<void> {
       </span>
       <span v-if="store.saving" class="dot saving" title="保存中"></span>
       <span v-else-if="store.dirty" class="dot dirty" title="未保存"></span>
+      <button
+        class="btn"
+        :class="{ off: !store.editorOutlineVisible }"
+        title="收起/展开右侧大纲"
+        @click="store.editorOutlineVisible = !store.editorOutlineVisible"
+      >
+        大纲
+      </button>
+      <button
+        v-if="store.mode === 'sv'"
+        class="btn"
+        :class="{ off: !store.editorPreviewVisible }"
+        title="收起/展开右侧渲染预览"
+        @click="store.editorPreviewVisible = !store.editorPreviewVisible"
+      >
+        预览
+      </button>
       <button class="btn" @click="exportHtmlDoc()">导出 HTML</button>
       <button class="btn" @click="exportPdfDoc()">导出 PDF</button>
       <button v-if="isPrivate" class="btn" @click="togglePrivacy(false)">移出隐私空间</button>
@@ -170,5 +187,11 @@ async function moveToTrash(): Promise<void> {
   align-items: center;
   gap: 4px;
   color: #c26a00;
+}
+
+.btn.off {
+  color: var(--fg-dim);
+  border-color: var(--border);
+  opacity: 0.7;
 }
 </style>
