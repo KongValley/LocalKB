@@ -80,10 +80,12 @@ onMounted(() => {
       'inline-code',
       'link',
       '|',
+      'outline',
       'undo',
       'redo'
     ],
     toolbarConfig: { pin: true },
+    outline: { enable: true, position: 'right' },
     counter: { enable: true, type: 'markdown', after: (len) => emit('count', len) },
     preview: { delay: 300, theme: { current: props.theme === 'dark' ? 'dark' : 'light' } },
     link: { isOpen: false },
@@ -141,7 +143,7 @@ defineExpose({ getValue: (): string => vditor?.getValue() ?? '' })
 </script>
 
 <template>
-  <div ref="host" class="md-editor-host"></div>
+  <div ref="host" class="md-editor-host" :style="{ '--kb-fs': store.editorFontSize + 'px' }"></div>
 </template>
 
 <style scoped>
@@ -153,5 +155,40 @@ defineExpose({ getValue: (): string => vditor?.getValue() ?? '' })
 .md-editor-host :deep(.vditor) {
   border: none;
   border-radius: 0;
+}
+
+/* 编辑器字号链：--kb-fs 由宿主注入（store.editorFontSize） */
+.md-editor-host :deep(.vditor-sv),
+.md-editor-host :deep(.vditor-wysiwyg pre.vditor-reset),
+.md-editor-host :deep(.vditor-ir pre.vditor-reset),
+.md-editor-host :deep(.vditor-preview .vditor-reset) {
+  font-size: var(--kb-fs);
+}
+
+/* 内容主题的标题/em 阶梯锚定到 --kb-fs，避免绝对 px 导致层级不缩放 */
+.md-editor-host :deep(.vditor-preview .vditor-reset h1) {
+  font-size: calc(var(--kb-fs) * 1.75);
+}
+
+.md-editor-host :deep(.vditor-preview .vditor-reset h2) {
+  font-size: calc(var(--kb-fs) * 1.5);
+}
+
+.md-editor-host :deep(.vditor-preview .vditor-reset h3) {
+  font-size: calc(var(--kb-fs) * 1.25);
+}
+
+.md-editor-host :deep(.vditor-preview .vditor-reset h4),
+.md-editor-host :deep(.vditor-preview .vditor-reset h5) {
+  font-size: var(--kb-fs);
+}
+
+.md-editor-host :deep(.vditor-preview .vditor-reset h6) {
+  font-size: calc(var(--kb-fs) * 0.85);
+}
+
+.md-editor-host :deep(.vditor-preview .vditor-reset pre),
+.md-editor-host :deep(.vditor-preview .vditor-reset code) {
+  font-size: calc(var(--kb-fs) * 0.92);
 }
 </style>

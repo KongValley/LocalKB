@@ -27,6 +27,8 @@ export const store = reactive({
   sideCollapsed: false,
   mode: (localStorage.getItem('md:mode') as EditorMode | null) ?? 'sv',
   theme: readStoredTheme(),
+  editorFontSize: readStoredFont(),
+  lightboxSrc: null as string | null,
   charCount: 0,
   lineCount: 1
 })
@@ -34,6 +36,12 @@ export const store = reactive({
 function readStoredTheme(): AppTheme {
   const raw = localStorage.getItem('md:theme')
   return raw === 'dark' || raw === 'eye' || raw === 'light' ? raw : 'light'
+}
+
+/** 编辑器字号归一：12–24 之外回落 15 */
+function readStoredFont(): number {
+  const n = Number(localStorage.getItem('kb:editor-font'))
+  return Number.isInteger(n) && n >= 12 && n <= 24 ? n : 15
 }
 
 /** note.ts 注入的自动保存调度（避免 store ↔ note 循环依赖） */
@@ -127,6 +135,11 @@ export function markSaved(content: string): void {
 watch(
   () => store.mode,
   (m) => localStorage.setItem('md:mode', m)
+)
+
+watch(
+  () => store.editorFontSize,
+  (fs) => localStorage.setItem('kb:editor-font', String(fs))
 )
 
 watch(

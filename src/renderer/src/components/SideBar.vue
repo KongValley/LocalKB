@@ -157,6 +157,7 @@ onBeforeUnmount(() => {
           </span>
           <span class="ico"><AppIcon name="book" :size="16" /></span>
           <span class="name" :title="root.id" @click="openRoot(root.id)">{{ root.name }}</span>
+          <span v-if="!store.sideCollapsed" class="kb-count">{{ root.count }}</span>
           <span v-if="root.isDefault && !store.sideCollapsed" class="badge">默认</span>
           <span class="acts">
             <button class="mini-btn" title="在根目录新建笔记" @click.stop="newNoteInRoot(root.id)">

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { SearchHit } from '../../../preload/api'
 import PageHeader from '../components/PageHeader.vue'
+import { locateText } from '../locate'
 import { openNote } from '../note'
 import { fileNameOf, store } from '../store'
 
@@ -72,9 +73,21 @@ async function search(): Promise<void> {
   }
 }
 
-async function onOpen(id: string): Promise<void> {
-  await openNote(id)
+// 实时搜索：300ms 防抖，Enter 仍立即搜
+let debounceTimer: number | null = null
+watch(query, () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = window.setTimeout(() => {
+    debounceTimer = null
+    void search()
+  }, 300)
+})
+
+async function onOpen(hit: SearchHit): Promise<void> {
+  await openNote(hit.id)
   await router.push('/notes')
+  // 定位失败静默（行文本可能被列表/代码拆分渲染）
+  void locateText(hit.lines[0]?.text ?? '')
 }
 </script>
 
@@ -94,7 +107,7 @@ async function onOpen(id: string): Promise<void> {
 
     <div v-if="error" class="empty">{{ error }}</div>
     <template v-else-if="results.length">
-      <div v-for="hit in results" :key="hit.id" class="card click" @click="onOpen(hit.id)">
+      <div v-for="hit in results" :key="hit.id" class="card click" @click="onOpen(hit)">
         <div class="kb-page-sub">
           {{ titleOf(hit.id) }}
           <span>命中 {{ hit.count }} 处</span>

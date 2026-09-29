@@ -842,3 +842,181 @@ body {
 :root[data-theme='eye'] .md-editor-host .vditor-reset a {
   color: var(--accent);
 }
+
+/* ── 快速打开面板 ── */
+
+.quick-open {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+}
+
+.quick-open-card {
+  width: 480px;
+  max-width: 92vw;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.quick-open-card .input {
+  width: calc(100% - 24px);
+  margin: 10px 12px;
+}
+
+.quick-open-list {
+  max-height: 320px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+}
+
+.quick-open-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.quick-open-item:last-child {
+  border-bottom: none;
+}
+
+.quick-open-item.active,
+.quick-open-item:hover {
+  background: var(--bg-soft);
+}
+
+.quick-open-item .title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-open-item .kb-count {
+  flex: 1;
+  text-align: right;
+}
+
+.quick-open-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--fg-dim);
+}
+
+/* ── 弱化小字（计数 / 路径 / 快捷键提示） ── */
+
+.kb-count {
+  color: var(--fg-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 定位闪烁高亮 ── */
+
+@keyframes kb-locate-fade {
+  from {
+    background-color: rgba(255, 213, 79, 0.45);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.kb-locate-flash {
+  animation: kb-locate-fade 1.6s ease-out forwards;
+  border-radius: 3px;
+}
+
+/* ── 图片放大层 ── */
+
+.kb-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.kb-lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+}
+
+/* ── AI 气泡内 Markdown 渲染 ── */
+
+.kb-md pre {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  overflow: auto;
+}
+
+.kb-md code {
+  background: var(--bg-soft);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.kb-md pre code {
+  background: none;
+  padding: 0;
+}
+
+.kb-md blockquote {
+  margin: 6px 0;
+  padding: 2px 12px;
+  border-left: 3px solid var(--border);
+  color: var(--fg-dim);
+}
+
+.kb-md table {
+  border-collapse: collapse;
+}
+
+.kb-md th,
+.kb-md td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+}
+
+.kb-md h1,
+.kb-md h2,
+.kb-md h3,
+.kb-md h4,
+.kb-md h5,
+.kb-md h6 {
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+}
+
+.kb-md p {
+  margin: 0.4em 0;
+}
+
+.kb-md ul,
+.kb-md ol {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+
+.kb-md img {
+  max-width: 100%;
+}

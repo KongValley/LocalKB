@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { renderStaticHtml } from '../export'
 import { openNote } from '../note'
 import { fileNameOf, store } from '../store'
 
 interface ChatMsg {
   role: 'user' | 'assistant' | 'error'
   text: string
+  /** assistant 成功气泡的 Markdown 渲染结果；空则回退纯文本 */
+  html?: string
   sources?: string[]
 }
 
@@ -41,8 +44,18 @@ async function send(): Promise<void> {
   await scrollToBottom()
   try {
     const r = await window.kb.aiAsk(q)
-    if (r.ok) messages.value.push({ role: 'assistant', text: r.answer, sources: r.sources })
-    else messages.value.push({ role: 'error', text: r.error })
+    if (r.ok) {
+      messages.value.push({ role: 'assistant', text: r.answer, sources: r.sources })
+      // 先落纯文本，html 就绪后原地替换；渲染失败留空继续走纯文本
+      const msg = messages.value[messages.value.length - 1]
+      try {
+        msg.html = await renderStaticHtml(r.answer)
+      } catch {
+        /* 回退纯文本 */
+      }
+    } else {
+      messages.value.push({ role: 'error', text: r.error })
+    }
   } catch (e) {
     messages.value.push({ role: 'error', text: e instanceof Error ? e.message : String(e) })
   } finally {
@@ -113,8 +126,9 @@ onMounted(async () => {
 
     <div class="kb-chat">
       <div ref="scrollEl" class="kb-chat-scroll">
-        <div v-for="(m, i) in messages" :key="i" class="bubble" :class="m.role">
-          {{ m.text }}
+        <div v-for="(m, i) in messages" :key="i" class="bubble" :class="[m.role, m.html && m.role === 'assistant' ? 'kb-md' : '']">
+          <div v-if="m.html && m.role === 'assistant'" v-html="m.html"></div>
+          <template v-else>{{ m.text }}</template>
           <div
             v-if="m.sources && m.sources.length"
             class="srcs"

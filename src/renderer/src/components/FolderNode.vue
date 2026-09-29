@@ -98,6 +98,7 @@ onBeforeUnmount(() => {
       </span>
       <span v-else class="caret-space"></span>
       <span class="name" :title="node.rel" @click="open">{{ node.name }}</span>
+      <span class="kb-count">{{ node.count }}</span>
       <span class="acts">
         <button class="mini-btn" title="新建子文件夹" @click.stop="startCreate">
           <AppIcon name="plus" :size="13" />

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "composite": true, "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
+    "composite": true, "target": "ES2022", "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext", "moduleResolution": "Bundler",
     "strict": true, "skipLibCheck": true, "noEmit": true,
     "types": ["vite/client"], "jsx": "preserve",
     "baseUrl": ".",
